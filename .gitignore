@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases / Data Stores (Generated locally)
+# Assuming chroma_db and chroma_store contain local database files/indices
+chroma_db/
+chroma_store/
+
+# Virtual Environments
+# Common names include venv, .venv, env, .env
+venv/
+.venv/
+env/
+.env/
+
+# Environment variables - often contain secrets
+# Adjust if you use a different naming convention
+.env
+.env.*
+!/.env.example
+stage-1/ai-testing/
+# Temporary or Dummy files (Optional - uncomment if needed)
+# dummy.txt
+
+# AI Testing Outputs (Optional - if this folder contains generated files/logs, not source code)
+# ai-testing/
+
+# Log files
+*.log
+
+# Coverage reports
+.coverage
+htmlcov/
+
+# Pytest cache
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# IDE / Editor specific files (Optional)
+# .vscode/
+# .idea/
