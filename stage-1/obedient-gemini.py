@@ -143,7 +143,7 @@ persist_dir = "./chroma_store"
 # Create a ChromaDB client
 print("🔄 Connecting to ChromaDB...")
 chroma_client = chromadb.PersistentClient(path=persist_dir)
-collection_name = "wiki_page"
+collection_name = "pdf_story"
 
 def get_vector_store():
     try:
@@ -171,7 +171,7 @@ def get_vector_store():
             return loader.load()
         
 
-        input_file = "content.txt"  # or "notes.txt"
+        input_file = "story.pdf"  # or "notes.txt"
         documents = load_documents_from_file(input_file)
 
 
@@ -226,7 +226,7 @@ def smart_rag_qa(query: str):
         return response.content, []
 
 # 9. --- Ask a question ---
-user_query = "Which month in 2021 had the most severe COVID-19 wave in Oregon?"
+user_query = "What is CI/CD?"
 
 answer, sources = smart_rag_qa(user_query)
 
