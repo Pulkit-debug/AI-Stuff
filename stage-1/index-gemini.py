@@ -70,7 +70,7 @@ qa_chain = RetrievalQA.from_chain_type(
 )
 
 # 9. --- Ask a question ---
-user_query = "What will i need to learn to work with pulkit and in what way should i do that?"
+user_query = "what should i learn from pulkit and how do i dive into devops what do i do?"
 
 response = qa_chain.invoke(user_query)
 
