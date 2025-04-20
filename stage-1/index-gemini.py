@@ -8,7 +8,7 @@ from langchain.schema.document import Document
 from embedding_client import EmbeddingClient
 
 # 1. --- Set up your Gemini API key ---
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
+os.environ["GOOGLE_API_KEY"] = "api"
 
 # Use the client instead of loading the model
 embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
@@ -37,14 +37,7 @@ except ValueError:
     # Collection doesn't exist, create it
     print("🆕 Collection not found, creating new vector DB...")
     raw_docs = [
-        "Pulkit is 24 years old and works as a DevOps engineer at Freecharge.com.",
-        "Freecharge is currently owned by Axis Bank and was previously owned by Snapdeal.",
-        "Pulkit recently bought a graphic tablet that works well, though it lags slightly when used with online tools like Figma.",
-        "Pulkit has a strict goal of retiring by the age of 40 or 45.",
-        "He wants to have crores in his account and build a business of his own someday.",
-        "A few days ago, Pulkit went to Udaipur with his friend Ankit.",
-        "Just yesterday, Pulkit had a fight with his so-called girlfriend, who thinks his interest in AI and agentic tools is worthless.",
-        "Pulkit believes in the potential of AI and is actively trying to learn more about it despite criticism."
+        asdfasdfasda
     ]
     documents = [Document(page_content=d) for d in raw_docs]
     

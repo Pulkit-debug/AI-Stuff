@@ -1,5 +1,5 @@
 import os
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional

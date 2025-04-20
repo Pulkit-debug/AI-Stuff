@@ -13,7 +13,7 @@
 # from embedding_client import EmbeddingClient
 
 # # 1. --- Set up Gemini API key ---
-# os.environ["GOOGLE_API_KEY"] = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
+# os.environ["GOOGLE_API_KEY"] = "api"
 
 # # 2. --- Initialize Embedding + Chroma ---
 # embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
@@ -175,7 +175,7 @@
 # from embedding_client import EmbeddingClient
 
 # # 1. --- Set up Gemini API key ---
-# os.environ["GOOGLE_API_KEY"] = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
+# os.environ["GOOGLE_API_KEY"] = "api"
 
 # # 2. --- Initialize Embedding + Chroma ---
 # embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
@@ -636,7 +636,7 @@ from langchain.chains.llm import LLMChain
 from embedding_client import EmbeddingClient
 
 # 1. --- Configuration ---
-os.environ["GOOGLE_API_KEY"] = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
+os.environ["GOOGLE_API_KEY"] = "api"
 PERSIST_DIR = "./chroma_store"
 COLLECTION_NAME = "NovaMind_info"
 SEARCH_KWARGS = {"k": 6, "score_threshold": 0.4, "fetch_k": 20}  # More comprehensive search
@@ -798,7 +798,7 @@ for question in questions:
 
 # # 🔥 1. Production Configuration
 # class Config:
-#     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0")
+#     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "api")
 #     CHROMA_DIR = "./chroma_store"
 #     COLLECTION_NAME = "NovaMind_info"
 #     SEARCH_CONFIG = {

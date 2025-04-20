@@ -1,4 +1,520 @@
-# VERSION -1 WORKING UMMM GOOD..
+# SMART RAG TAKE #2 TRYING TO MAKE IT BETTER
+# WORKING LIKE A CHARM
+# has issue with telling which asnwer is what
+
+
+# import streamlit as st
+# import os
+# import chromadb
+# from langchain_chroma import Chroma
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain.schema.document import Document
+# from embedding_client import EmbeddingClient
+# from typing import List, Optional
+# from langchain_community.document_loaders import PyPDFLoader, TextLoader
+# import tempfile
+# import re
+
+
+# # Configuration
+# GOOGLE_API_KEY = "api"
+# os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+# PERSIST_DIR = "./chroma_store"
+# COLLECTION_NAME = "normal_story"
+# SEARCH_KWARGS = {"k": 6, "score_threshold": 0.4, "fetch_k": 20}
+
+
+# def clean_text(text: str) -> str:
+#     # Basic spacing fix: add space between lowercase-uppercase (e.g., homeHe → home He)
+#     text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    
+#     # Add space between a word and a capitalized word following it
+#     text = re.sub(r'([a-zA-Z])([A-Z][a-z])', r'\1 \2', text)
+
+#     # Replace multiple spaces with one
+#     text = re.sub(r'\s{2,}', ' ', text)
+
+#     return text.strip()
+
+# def process_uploaded_files(uploaded_files: List[st.runtime.uploaded_file_manager.UploadedFile]) -> List[Document]:
+#     """Process uploaded files into LangChain Documents"""
+#     docs = []
+#     for file in uploaded_files:
+#         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+#             temp_file.write(file.getvalue())
+#             temp_path = temp_file.name
+        
+#         try:
+#             if file.name.endswith(".pdf"):
+#                 loader = PyPDFLoader(temp_path)
+#                 # docs.extend(loader.load())
+#                 docs.extend([
+#                     Document(page_content=clean_text(doc.page_content), metadata=doc.metadata)
+#                     for doc in loader.load()
+#                 ])
+#             elif file.name.endswith((".txt", ".md")):
+#                 loader = TextLoader(temp_path)
+#                 # docs.extend(loader.load())
+#                 docs.extend([
+#                     Document(page_content=clean_text(doc.page_content), metadata=doc.metadata)
+#                     for doc in loader.load()
+#                 ])
+#             else:
+#                 st.warning(f"Unsupported file type: {file.name}")
+#         except Exception as e:
+#             st.error(f"Error processing {file.name}: {str(e)}")
+#         finally:
+#             os.remove(temp_path)
+#     return docs
+
+# @st.cache_resource
+# def load_rag_system(uploaded_files: Optional[List] = None):
+#     embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
+#     chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
+    
+#     # Process uploaded files if any
+#     new_docs = process_uploaded_files(uploaded_files) if uploaded_files else []
+
+#     try:
+#         collection = chroma_client.get_collection(COLLECTION_NAME)
+#         existing_count = collection.count()
+        
+#         # Add new documents if any
+#         if new_docs:
+#             ids = [str(existing_count + i) for i in range(len(new_docs))]
+#             collection.add(
+#                 documents=[doc.page_content for doc in new_docs],
+#                 ids=ids
+#             )
+            
+#         vectordb = Chroma(
+#             client=chroma_client,
+#             collection_name=COLLECTION_NAME,
+#             embedding_function=embedding_model,
+#             collection_metadata={"hnsw:space": "cosine"}
+#         )
+#     except:
+#         # Create new collection with initial documents
+#         raw_docs = new_docs if new_docs else [Document(page_content="NovaMind AI default information")]
+#         vectordb = Chroma.from_documents(
+#             documents=raw_docs,
+#             embedding=embedding_model,
+#             client=chroma_client,
+#             collection_name=COLLECTION_NAME,
+#             collection_metadata={"hnsw:space": "cosine"}
+#         )
+
+#     retriever = vectordb.as_retriever(
+#         search_type="mmr",
+#         search_kwargs=SEARCH_KWARGS
+#     )
+
+#     llm = ChatGoogleGenerativeAI(
+#         model="gemini-2.0-flash",
+#         temperature=0.3,
+#         google_api_key=GOOGLE_API_KEY
+#     )
+
+#     return llm, retriever, vectordb._collection.count()
+
+# # Initialize app
+# st.set_page_config(page_title="NovaMind AI Assistant", page_icon="🤖")
+# st.title("NovaMind Smart Conversational Agent")
+
+# # Session state management
+# if "history" not in st.session_state:
+#     st.session_state.history = []
+# if "uploaded_files" not in st.session_state:
+#     st.session_state.uploaded_files = []
+
+# # Sidebar controls
+# with st.sidebar:
+#     st.header("Document Management")
+#     uploaded_files = st.file_uploader(
+#         "Upload knowledge documents",
+#         type=["pdf", "txt", "md"],
+#         accept_multiple_files=True
+#     )
+    
+#     if uploaded_files and st.button("Process Documents"):
+#         st.session_state.uploaded_files = uploaded_files
+#         with st.spinner("Processing documents..."):
+#             try:
+#                 llm, retriever, doc_count = load_rag_system(uploaded_files)
+#                 st.success(f"Processed {len(uploaded_files)} files. Total documents: {doc_count}")
+#             except Exception as e:
+#                 st.error(f"Error processing documents: {str(e)}")
+    
+#     if st.button("Clear History"):
+#         st.session_state.history = []
+#         st.rerun()
+    
+#     st.markdown("---")
+#     st.markdown("**Smart Features:**")
+#     st.markdown("- Automatic document ingestion")
+#     st.markdown("- Context-aware query understanding")
+#     st.markdown("- Dynamic knowledge integration")
+
+# # Display chat history
+# for msg in st.session_state.history:
+#     with st.chat_message(msg["role"]):
+#         st.markdown(msg["content"])
+#         if msg.get("sources"):
+#             with st.expander("Sources"):
+#                 for src in msg["sources"]:
+#                     st.markdown(f"📄 {src}")
+
+# # User input
+# if prompt := st.chat_input("Ask about NovaMind AI:"):
+#     st.session_state.history.append({"role": "user", "content": prompt})
+    
+#     with st.chat_message("user"):
+#         st.markdown(prompt)
+
+#     with st.spinner("Analyzing..."):
+#         try:
+#             llm, retriever, doc_count = load_rag_system(st.session_state.uploaded_files)
+            
+#             # Generate context-aware query
+#             query_prompt = f"""Based on the conversation history and current question, generate an optimized search query.
+
+# History:
+# {" ".join([msg['content'] for msg in st.session_state.history[-4:]])}
+
+# Question: {prompt}
+
+# Generate a comprehensive search query that considers potential document context:"""
+            
+#             optimized_query = llm.invoke(query_prompt).content
+
+#             # Retrieve documents
+#             retrieved_docs = retriever.get_relevant_documents(optimized_query)
+#             context = "\n".join({d.page_content for d in retrieved_docs}) if retrieved_docs else ""
+#             if not context.strip():
+#                 st.info("No relevant context found in documents. Providing a general response.")
+
+
+#             print("this is context -> " + context)
+
+#             # Prepare LLM prompt
+#             llm_prompt = f"""You are a helpful AI assistant. Use the following context if relevant, otherwise use your general knowledge.
+
+# Context: {context or 'No specific context available'}
+
+# Conversation History:
+# {" ".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.history[-4:]])}
+
+# Question: {prompt}
+
+# Provide a concise, accurate response:"""
+            
+#             response = llm.invoke(llm_prompt)
+#             answer = response.content
+
+#             # Add to history
+#             st.session_state.history.append({
+#                 "role": "assistant",
+#                 "content": answer,
+#                 "sources": list({d.metadata.get('source', 'Unknown')[:50] for d in retrieved_docs[:3]}) if context else []
+#             })
+
+#             # Display response
+#             with st.chat_message("assistant"):
+#                 st.markdown(answer)
+#                 if context:
+#                     with st.expander("Relevant Sources"):
+#                         for doc in retrieved_docs[:3]:
+#                             source = doc.metadata.get('source', 'Unknown')
+#                             st.markdown(f"🔗 {source.split('/')[-1][:40]} - {doc.page_content[:100]}...")
+
+#         except Exception as e:
+#             st.error(f"Error: {str(e)}")
+#             st.session_state.history.append({
+#                 "role": "assistant",
+#                 "content": f"Error processing request: {str(e)}"
+#             })
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# SMART RAG TAKE #3 WITH MORE IMPROVEMENTS OF DOCUMENTS AND FALLBACK NOTIFICATION
+# TELLS YOU THAT THIS ANSWER IS THAT GENERAL NKOWLEGE OR CONTEXT.
+
+
+# import streamlit as st
+# import os
+# import chromadb
+# from langchain_chroma import Chroma
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain.schema.document import Document
+# from embedding_client import EmbeddingClient
+# from typing import List, Optional
+# from langchain_community.document_loaders import PyPDFLoader, TextLoader
+# import tempfile
+# import re
+
+
+# # Configuration
+# GOOGLE_API_KEY = "api"
+# os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+# PERSIST_DIR = "./chroma_store"
+# COLLECTION_NAME = "buisness_story"
+# SEARCH_KWARGS = {"k": 6, "score_threshold": 0.4, "fetch_k": 20}
+
+
+# def clean_text(text: str) -> str:
+#     # Basic spacing fix: add space between lowercase-uppercase (e.g., homeHe → home He)
+#     text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    
+#     # Add space between a word and a capitalized word following it
+#     text = re.sub(r'([a-zA-Z])([A-Z][a-z])', r'\1 \2', text)
+
+#     # Replace multiple spaces with one
+#     text = re.sub(r'\s{2,}', ' ', text)
+
+#     return text.strip()
+
+# def process_uploaded_files(uploaded_files: List[st.runtime.uploaded_file_manager.UploadedFile]) -> List[Document]:
+#     """Process uploaded files into LangChain Documents"""
+#     docs = []
+#     for file in uploaded_files:
+#         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+#             temp_file.write(file.getvalue())
+#             temp_path = temp_file.name
+        
+#         try:
+#             if file.name.endswith(".pdf"):
+#                 loader = PyPDFLoader(temp_path)
+#                 # docs.extend(loader.load())
+#                 docs.extend([
+#                     Document(page_content=clean_text(doc.page_content), metadata=doc.metadata)
+#                     for doc in loader.load()
+#                 ])
+#             elif file.name.endswith((".txt", ".md")):
+#                 loader = TextLoader(temp_path)
+#                 # docs.extend(loader.load())
+#                 docs.extend([
+#                     Document(page_content=clean_text(doc.page_content), metadata=doc.metadata)
+#                     for doc in loader.load()
+#                 ])
+#             else:
+#                 st.warning(f"Unsupported file type: {file.name}")
+#         except Exception as e:
+#             st.error(f"Error processing {file.name}: {str(e)}")
+#         finally:
+#             os.remove(temp_path)
+#     return docs
+
+# @st.cache_resource
+# def load_rag_system(uploaded_files: Optional[List] = None):
+#     embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
+#     chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
+    
+#     # Process uploaded files if any
+#     new_docs = process_uploaded_files(uploaded_files) if uploaded_files else []
+
+#     try:
+#         collection = chroma_client.get_collection(COLLECTION_NAME)
+#         existing_count = collection.count()
+        
+#         # Add new documents if any
+#         if new_docs:
+#             ids = [str(existing_count + i) for i in range(len(new_docs))]
+#             collection.add(
+#                 documents=[doc.page_content for doc in new_docs],
+#                 ids=ids
+#             )
+            
+#         vectordb = Chroma(
+#             client=chroma_client,
+#             collection_name=COLLECTION_NAME,
+#             embedding_function=embedding_model,
+#             collection_metadata={"hnsw:space": "cosine"}
+#         )
+#     except:
+#         # Create new collection with initial documents
+#         raw_docs = new_docs if new_docs else [Document(page_content="NovaMind AI default information")]
+#         vectordb = Chroma.from_documents(
+#             documents=raw_docs,
+#             embedding=embedding_model,
+#             client=chroma_client,
+#             collection_name=COLLECTION_NAME,
+#             collection_metadata={"hnsw:space": "cosine"}
+#         )
+
+#     retriever = vectordb.as_retriever(
+#         search_type="mmr",
+#         search_kwargs=SEARCH_KWARGS
+#     )
+
+#     llm = ChatGoogleGenerativeAI(
+#         model="gemini-2.0-flash",
+#         temperature=0.3,
+#         google_api_key=GOOGLE_API_KEY
+#     )
+
+#     return llm, retriever, vectordb._collection.count()
+
+# # Initialize app
+# st.set_page_config(page_title="NovaMind AI Assistant", page_icon="🤖")
+# st.title("NovaMind Smart Conversational Agent")
+
+# # Session state management
+# if "history" not in st.session_state:
+#     st.session_state.history = []
+# if "uploaded_files" not in st.session_state:
+#     st.session_state.uploaded_files = []
+
+# # Sidebar controls
+# with st.sidebar:
+#     st.header("Document Management")
+#     uploaded_files = st.file_uploader(
+#         "Upload knowledge documents",
+#         type=["pdf", "txt", "md"],
+#         accept_multiple_files=True
+#     )
+    
+#     if uploaded_files and st.button("Process Documents"):
+#         st.session_state.uploaded_files = uploaded_files
+#         with st.spinner("Processing documents..."):
+#             try:
+#                 llm, retriever, doc_count = load_rag_system(uploaded_files)
+#                 st.success(f"Processed {len(uploaded_files)} files. Total documents: {doc_count}")
+#             except Exception as e:
+#                 st.error(f"Error processing documents: {str(e)}")
+    
+#     if st.button("Clear History"):
+#         st.session_state.history = []
+#         st.rerun()
+    
+#     st.markdown("---")
+#     st.markdown("**Smart Features:**")
+#     st.markdown("- Automatic document ingestion")
+#     st.markdown("- Context-aware query understanding")
+#     st.markdown("- Dynamic knowledge integration")
+
+# # Display chat history
+# for msg in st.session_state.history:
+#     with st.chat_message(msg["role"]):
+#         st.markdown(msg["content"])
+#         if msg.get("sources"):
+#             with st.expander("Sources"):
+#                 for src in msg["sources"]:
+#                     st.markdown(f"📄 {src}")
+#         if msg.get("source_type"):
+#             st.caption(f"*{msg['source_type']}*")
+
+# # User input
+# if prompt := st.chat_input("Ask about NovaMind AI:"):
+#     st.session_state.history.append({"role": "user", "content": prompt})
+    
+#     with st.chat_message("user"):
+#         st.markdown(prompt)
+
+#     with st.spinner("Analyzing..."):
+#         try:
+#             llm, retriever, doc_count = load_rag_system(st.session_state.uploaded_files)
+            
+#             # Generate context-aware query
+#             query_prompt = f"""Based on the conversation history and current question, generate an optimized search query.
+
+# History:
+# {" ".join([msg['content'] for msg in st.session_state.history[-4:]])}
+
+# Question: {prompt}
+
+# Generate a comprehensive search query that considers potential document context:"""
+            
+#             optimized_query = llm.invoke(query_prompt).content
+
+#             # Retrieve documents
+#             retrieved_docs = retriever.get_relevant_documents(optimized_query)
+#             context = "\n".join({d.page_content for d in retrieved_docs}) if retrieved_docs else ""
+            
+#             # Determine if we have relevant context to use
+#             has_relevant_context = bool(context.strip() and len(context) > 50)
+            
+#             # Print debug info
+#             if has_relevant_context:
+#                 print("Answering from uploaded documents")
+#                 source_type = "Response based on uploaded documents"
+#             else:
+#                 print("Answering from general LLM knowledge")
+#                 source_type = "Response based on general knowledge"
+                
+#             print("Context length:", len(context))
+
+#             # Prepare LLM prompt
+#             llm_prompt = f"""You are a helpful AI assistant. Use the following context if relevant, otherwise use your general knowledge.
+
+# Context: {context or 'No specific context available'}
+
+# Conversation History:
+# {" ".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.history[-4:]])}
+
+# Question: {prompt}
+
+# Provide a concise, accurate response:"""
+            
+#             response = llm.invoke(llm_prompt)
+#             answer = response.content
+
+#             # Add to history with source type indication
+#             st.session_state.history.append({
+#                 "role": "assistant",
+#                 "content": answer,
+#                 "sources": list({d.metadata.get('source', 'Unknown')[:50] for d in retrieved_docs[:3]}) if has_relevant_context else [],
+#                 "source_type": source_type
+#             })
+
+#             # Display response
+#             with st.chat_message("assistant"):
+#                 st.markdown(answer)
+                
+#                 # Show the source indicator
+#                 st.caption(f"*{source_type}*")
+                
+#                 if has_relevant_context:
+#                     with st.expander("Relevant Sources"):
+#                         for doc in retrieved_docs[:3]:
+#                             source = doc.metadata.get('source', 'Unknown')
+#                             st.markdown(f"🔗 {source.split('/')[-1][:40]} - {doc.page_content[:100]}...")
+
+#         except Exception as e:
+#             st.error(f"Error: {str(e)}")
+#             st.session_state.history.append({
+#                 "role": "assistant",
+#                 "content": f"Error processing request: {str(e)}"
+#             })
+
+
+
+
+
+
+
+
+
+
+#TESTING WITH SOURCE 
+
+
+
+
+
+
 
 import streamlit as st
 import os
@@ -7,35 +523,89 @@ from langchain_chroma import Chroma
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema.document import Document
 from embedding_client import EmbeddingClient
+from typing import List, Optional
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
+import tempfile
+import re
+
 
 # Configuration
-GOOGLE_API_KEY = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
+GOOGLE_API_KEY = "api"
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 PERSIST_DIR = "./chroma_store"
-COLLECTION_NAME = "NovaMind_info"
+COLLECTION_NAME = "my_story"
 SEARCH_KWARGS = {"k": 6, "score_threshold": 0.4, "fetch_k": 20}
 
-# Cache resources
+
+def clean_text(text: str) -> str:
+    text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    text = re.sub(r'([a-zA-Z])([A-Z][a-z])', r'\1 \2', text)
+    text = re.sub(r'\s{2,}', ' ', text)
+    return text.strip()
+
+
+def process_uploaded_files(uploaded_files: List[st.runtime.uploaded_file_manager.UploadedFile]) -> List[Document]:
+    """Process uploaded files into LangChain Documents with cleaned content and file metadata"""
+    docs = []
+    for file in uploaded_files:
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file.write(file.getvalue())
+            temp_path = temp_file.name
+
+        try:
+            if file.name.endswith(".pdf"):
+                loader = PyPDFLoader(temp_path)
+                loaded_docs = loader.load()
+            elif file.name.endswith((".txt", ".md")):
+                loader = TextLoader(temp_path)
+                loaded_docs = loader.load()
+            else:
+                st.warning(f"Unsupported file type: {file.name}")
+                continue
+
+            docs.extend([
+                Document(
+                    page_content=clean_text(doc.page_content),
+                    metadata={**doc.metadata, "source": file.name}
+                ) for doc in loaded_docs
+            ])
+
+        except Exception as e:
+            st.error(f"Error processing {file.name}: {str(e)}")
+        finally:
+            os.remove(temp_path)
+
+    return docs
+
+
 @st.cache_resource
-def load_rag_system():
+def load_rag_system(uploaded_files: Optional[List] = None):
     embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
     chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
-    
-    # Vector store initialization
+
+    new_docs = process_uploaded_files(uploaded_files) if uploaded_files else []
+
     try:
         collection = chroma_client.get_collection(COLLECTION_NAME)
-        if collection.count() == 0:
-            raise ValueError("Empty collection")
+        existing_count = collection.count()
+
+        if new_docs:
+            ids = [str(existing_count + i) for i in range(len(new_docs))]
+            collection.add(
+                documents=[doc.page_content for doc in new_docs],
+                ids=ids,
+                metadatas=[doc.metadata for doc in new_docs]  # ✅ CRUCIAL FIX
+            )
+
         vectordb = Chroma(
             client=chroma_client,
             collection_name=COLLECTION_NAME,
             embedding_function=embedding_model,
             collection_metadata={"hnsw:space": "cosine"}
         )
+
     except:
-        raw_docs = [Document(page_content=d) for d in [
-            # Your document texts here
-        ]]
+        raw_docs = new_docs if new_docs else [Document(page_content="NovaMind SRAG default info")]
         vectordb = Chroma.from_documents(
             documents=raw_docs,
             embedding=embedding_model,
@@ -55,281 +625,126 @@ def load_rag_system():
         google_api_key=GOOGLE_API_KEY
     )
 
-    return llm, retriever
+    return llm, retriever, vectordb._collection.count()
 
-# Initialize app
-st.set_page_config(page_title="NovaMind AI Assistant", page_icon="🤖")
-st.title("NovaMind Smart Conversational Agent")
 
-# Session state management
+# --- Streamlit App ---
+st.set_page_config(page_title="NovaMind SRAG Assistant", page_icon="🤖")
+st.title("NovaMind SMART RAG")
+
 if "history" not in st.session_state:
     st.session_state.history = []
+if "uploaded_files" not in st.session_state:
+    st.session_state.uploaded_files = []
 
-# Display chat history
+# Sidebar
+with st.sidebar:
+    st.header("📄 Document Management")
+    uploaded_files = st.file_uploader("Upload documents", type=["pdf", "txt", "md"], accept_multiple_files=True)
+
+    if uploaded_files and st.button("Process Documents"):
+        st.session_state.uploaded_files = uploaded_files
+        with st.spinner("Processing documents..."):
+            try:
+                llm, retriever, doc_count = load_rag_system(uploaded_files)
+                st.success(f"Uploaded {len(uploaded_files)} files. Total documents: {doc_count}")
+            except Exception as e:
+                st.error(f"Error processing documents: {str(e)}")
+
+    if st.button("🧹 Clear Chat History"):
+        st.session_state.history = []
+        st.rerun()
+
+    if st.button("🧨 Reset Embedding Store"):
+        chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
+        
+        try:
+            collection_names = [col.name for col in chroma_client.list_collections()]
+            if COLLECTION_NAME in collection_names:
+                chroma_client.delete_collection(name=COLLECTION_NAME)
+                st.success("Chroma store reset. Please upload files again.")
+            else:
+                st.info(f"Collection `{COLLECTION_NAME}` does not exist. Nothing to delete.")
+        except Exception as e:
+            st.error(f"Error resetting embedding store: {e}")
+
+        st.session_state.history = []
+        st.rerun()
+
+
+    st.markdown("---")
+    st.markdown("**Smart Features:**")
+    st.markdown("- RAG with Gemini")
+    st.markdown("- File-aware answers with sources")
+    st.markdown("- Custom local embedding backend")
+
+
+# Chat UI
 for msg in st.session_state.history:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
         if msg.get("sources"):
-            with st.expander("Sources"):
+            with st.expander("Relevant Sources"):
                 for src in msg["sources"]:
-                    st.markdown(f"📄 {src}")
+                    st.markdown(f"📄 **{src}**")
 
-# User input
-if prompt := st.chat_input("Ask about NovaMind AI:"):
-    # Add user message to history
+
+if prompt := st.chat_input("Ask your question..."):
     st.session_state.history.append({"role": "user", "content": prompt})
-    
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    with st.spinner("Analyzing..."):
-        llm, retriever = load_rag_system()
-        
+    with st.spinner("Thinking..."):
         try:
-            # Smart retrieval with history context
-            expanded_query = f"{prompt} - company information, business details, product features"
-            retrieved_docs = retriever.get_relevant_documents(expanded_query)
-            context = "\n".join({d.page_content for d in retrieved_docs})
+            llm, retriever, doc_count = load_rag_system(st.session_state.uploaded_files)
 
-            # Format prompt with history
-            history_context = "\n".join(
-                [f"{msg['role']}: {msg['content']}" 
-                 for msg in st.session_state.history[-4:]]  # Keep last 4 messages
-            )
-            
-            final_prompt = f"""**Conversation History**
-{history_context}
+            query_prompt = f"""Based on this chat and the user's new question, generate an improved search query.
 
-**Current Context**
-{context if context else "No relevant documents found"}
+Chat:
+{" ".join([msg['content'] for msg in st.session_state.history[-4:]])}
 
-**Question**
-{prompt}
+Question: {prompt}
 
-**Instructions**
-1. {"Use context first" if context else "Use general knowledge"}
-2. {"Maintain conversation flow" if history_context else "Be concise"}
-3. {"Cite sources" if context else "Mention this is general knowledge"}"""
+Optimized search query:"""
+            optimized_query = llm.invoke(query_prompt).content
 
-            # Generate response
+            retrieved_docs = retriever.get_relevant_documents(optimized_query)
+            context = "\n".join({doc.page_content for doc in retrieved_docs}) if retrieved_docs else ""
+
+            final_prompt = f"""You are a helpful AI assistant. Use the following context (if available) to answer.
+
+Context: {context or "No specific context found."}
+
+Chat History:
+{" ".join([f"{msg['role']}: {msg['content']}" for msg in st.session_state.history[-4:]])}
+
+User Question: {prompt}
+
+Answer concisely and clearly:"""
+
             response = llm.invoke(final_prompt)
             answer = response.content
 
-            # Add to history
+            sources = list({doc.metadata.get('source', 'Unknown')[:50] for doc in retrieved_docs[:3]}) if context else []
+
             st.session_state.history.append({
                 "role": "assistant",
                 "content": answer,
-                "sources": [d.page_content[:150] + "..." for d in retrieved_docs[:3]] if context else []
+                "sources": sources
             })
 
-            # Display response
             with st.chat_message("assistant"):
                 st.markdown(answer)
-                if context:
+                if sources:
                     with st.expander("Relevant Sources"):
                         for doc in retrieved_docs[:3]:
-                            st.markdown(f"🔗 {doc.page_content[:120]}...")
+                            source = doc.metadata.get("source", "Unknown")
+                            snippet = doc.page_content[:100].replace("\n", " ")
+                            st.markdown(f"🔗 **{source}** — {snippet}...")
 
         except Exception as e:
-            st.error(f"Error: {str(e)}")
+            st.error(f"❌ Error: {str(e)}")
             st.session_state.history.append({
                 "role": "assistant",
-                "content": f"Error processing request: {str(e)}"
+                "content": f"Error occurred: {str(e)}"
             })
-
-# Sidebar controls
-with st.sidebar:
-    if st.button("Clear History"):
-        st.session_state.history = []
-        st.rerun()
-    st.markdown("---")
-    st.markdown("**Smart Features:**")
-    st.markdown("- Context-aware responses")
-    st.markdown("- Conversation history tracking")
-    st.markdown("- Automatic source verification")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#   VERSION - 2 TESTING 
-
-
-
-# import streamlit as st
-# import os
-# import chromadb
-# import numpy as np
-# from langchain_chroma import Chroma
-# from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain.schema.document import Document
-# from embedding_client import EmbeddingClient
-
-# # Configuration
-# GOOGLE_API_KEY = "AIzaSyBrzFVvP6MDAEBKtmqrtkdmnIOCMIkjfo0"
-# os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-# PERSIST_DIR = "./chroma_store"
-# COLLECTION_NAME = "NovaMind_info"
-# SEARCH_KWARGS = {"k": 6}  # Removed score threshold
-
-# # Cache resources with enhanced validation
-# @st.cache_resource
-# def load_rag_system():
-#     embedding_model = EmbeddingClient(api_url="http://127.0.0.1:2000")
-#     chroma_client = chromadb.PersistentClient(path=PERSIST_DIR)
-    
-#     # Vector store initialization with validation
-#     try:
-#         collection = chroma_client.get_collection(COLLECTION_NAME)
-#         if collection.count() == 0:
-#             raise ValueError("Empty collection")
-#         vectordb = Chroma(
-#             client=chroma_client,
-#             collection_name=COLLECTION_NAME,
-#             embedding_function=embedding_model,
-#             collection_metadata={"hnsw:space": "cosine"}
-#         )
-#     except:
-#         raw_docs = [Document(page_content=d) for d in [
-#             "NovaMind AI is a startup founded in 2024 with the mission of building intelligent AI agents for enterprise workflows.",
-#             "The founding team consists of three members: Aisha Kapoor (CEO), Rahul Mehta (CTO), and Jenny Lin (COO), all with strong backgrounds in AI research and product development.",
-#             # ... other documents ...
-#         ]]
-#         vectordb = Chroma.from_documents(
-#             documents=raw_docs,
-#             embedding=embedding_model,
-#             client=chroma_client,
-#             collection_name=COLLECTION_NAME,
-#             collection_metadata={"hnsw:space": "cosine"}
-#         )
-
-#     retriever = vectordb.as_retriever(
-#         search_type="similarity",  # Changed from MMR to basic similarity
-#         search_kwargs=SEARCH_KWARGS
-#     )
-
-#     llm = ChatGoogleGenerativeAI(
-#         model="gemini-2.0-flash",
-#         temperature=0.3,
-#         google_api_key=GOOGLE_API_KEY
-#     )
-
-#     return llm, retriever, embedding_model
-
-# # Enhanced relevance checking
-# def is_context_relevant(query: str, docs: list, embedder: EmbeddingClient) -> bool:
-#     if not docs:
-#         return False
-    
-#     try:
-#         query_embedding = embedder.embed_query(query)
-#         doc_embeddings = [embedder.embed_query(d.page_content) for d in docs]
-#         similarities = [
-#             np.dot(query_embedding, doc_embed) / (np.linalg.norm(query_embedding) * np.linalg.norm(doc_embed))
-#             for doc_embed in doc_embeddings
-#         ]
-#         return max(similarities) > 0.5  # Check max similarity instead of average
-#     except:
-#         return False
-
-# # Response generation pipeline
-# def generate_response(query: str, llm, retriever, embedder, history: list) -> tuple:
-#     # Retrieve documents with expanded query
-#     expanded_query = f"{query} organization team product details"  # Better expansion terms
-#     retrieved_docs = retriever.get_relevant_documents(expanded_query)
-    
-#     # Enhanced relevance check
-#     context_valid = is_context_relevant(query, retrieved_docs, embedder)
-    
-#     # Prepare context
-#     context = "\n".join({d.page_content for d in retrieved_docs}) if context_valid else ""
-    
-#     # Generate answer with strict prompt
-#     prompt_template = f"""**Response Protocol**
-# 1. Available Context:
-# {context if context else "No relevant company information available"}
-
-# 2. User Question:
-# {query}
-
-# **Instruction Set**
-# - Answer using context when available
-# - Be precise with names and numbers
-# - For partial info: "According to company documents: [known facts]. No data on [missing info]"
-# - General knowledge: Answer normally without context references"""
-
-#     response = llm.invoke(prompt_template)
-#     return response.content, retrieved_docs if context_valid else []
-
-# # UI Setup
-# st.set_page_config(page_title="NovaMind AI Assistant", page_icon="🤖")
-# st.title("NovaMind Enterprise Knowledge Assistant")
-
-# # Session state management
-# if "history" not in st.session_state:
-#     st.session_state.history = []
-
-# # Display chat history
-# for msg in st.session_state.history:
-#     with st.chat_message(msg["role"]):
-#         st.markdown(msg["content"])
-#         if msg.get("sources"):
-#             with st.expander("Verified Sources"):
-#                 for src in msg["sources"]:
-#                     st.markdown(f"📄 {src}")
-
-# # User input handling
-# if prompt := st.chat_input("Ask about NovaMind AI:"):
-#     st.session_state.history.append({"role": "user", "content": prompt})
-    
-#     with st.chat_message("user"):
-#         st.markdown(prompt)
-
-#     with st.spinner("Verifying information..."):
-#         try:
-#             llm, retriever, embedder = load_rag_system()
-#             answer, sources = generate_response(prompt, llm, retriever, embedder, st.session_state.history)
-            
-#             # Add to history
-#             st.session_state.history.append({
-#                 "role": "assistant",
-#                 "content": answer,
-#                 "sources": [d.page_content[:150] + "..." for d in sources[:3]] if sources else []
-#             })
-
-#             # Display response
-#             with st.chat_message("assistant"):
-#                 st.markdown(answer)
-#                 if sources:
-#                     with st.expander("Verified Sources"):
-#                         for doc in sources[:3]:
-#                             st.markdown(f"🔍 {doc.page_content[:120]}...")
-
-#         except Exception as e:
-#             st.error(f"System error: {str(e)}")
-#             st.session_state.history.append({
-#                 "role": "assistant",
-#                 "content": f"Error processing request: {str(e)}"
-#             })
-
-# # Sidebar controls
-# with st.sidebar:
-#     if st.button("🧹 Clear Conversation History"):
-#         st.session_state.history = []
-#         st.rerun()
-    
-#     st.markdown("---")
-#     st.markdown("**System Features**")
-#     st.markdown("✅ Hallucination-protected responses  \n"
-#                 "🔍 Context-aware verification  \n"
-#                 "📑 Source-tracked answers  \n"
-#                 "🤖 Smart conversation memory")
